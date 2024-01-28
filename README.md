@@ -20,3 +20,7 @@ Practical on Sexual Selection for the EvoBio Crash Course.
 
 * [https://evobiocrashcourse.github.io/](https://evobiocrashcourse.github.io/)
 * [https://github.com/rscherrer/evo-bio-cc](https://github.com/rscherrer/evo-bio-cc)
+
+## References
+
+Kuijper, B., Pen, I., & Weissing, F. J. (2012). A Guide to Sexual Selection Theory. Annual Review of Ecology, Evolution, and Systematics, 43(1), 287–311. [https://doi.org/10.1146/annurev-ecolsys-110411-160245](https://doi.org/10.1146/annurev-ecolsys-110411-160245)

@@ -1,0 +1,290 @@
+---
+title: 'Practical: Sexual Selection Models'
+author: "Jana Riederer and Raphaël Scherrer [@EvoBioCC](https://twitter.com/EvoBioCC)"
+output:
+  html_document:
+    df_print: paged
+---
+
+Hello everyone, and welcome to the practical on sexual selection and evolutionary theory!
+
+In this practical, you will look at three different theoretical approaches to a model of sexual selection. In this model, males express an ornament trait *t* and females express a preference *p*. Both *t* and *p* are then allowed to evolve through evolutionary time. Note here that having a preference is not costly, and expressing the ornament is associated with a slight cost. The practical is based on a publication, [Kuijper *et al.* 2012](https://www.annualreviews.org/doi/10.1146/annurev-ecolsys-110411-160245), which you can also find in the [Google Drive folder](https://drive.google.com/drive/folders/1kXGbO17V3JZGNpHh2jzapQZplr4R1u2w?usp=drive_link). In this paper you can find more information and a fourth theoretical approach (adaptive dynamics) which we will not consider today.
+
+## Question 0
+
+Describe the dynamics of sexual selection that you expect to see here. What selection pressure(s) might drive female choice in such a setting? Which empirical system might this model describe? (Hint: Sexy Son Sexual Selection...)
+
+# Part 1: Quantitative genetics
+
+This model tracks the evolution of the mean value of *t* and *p* through evolutionary time.
+
+## Question 1
+
+Run the following piece of code (copy and paste it into your R console):
+
+```{r, fig.show = "hide", warning = FALSE, message = FALSE}
+# First set up our R environment
+library(tidyverse)
+theme_set(theme_classic())
+
+# Load useful functions
+source("functions/quant-gen-functions.R")
+
+set.seed(42) # for reproducible results
+
+# Run simulation
+data <- sim_model_qgn(
+  t0 = 0, # initial ornament value
+  p0 = 1, # initial preference value
+  Gt = 1, # genetic variance of the ornament
+  Gtp = 0, # genetic covariance between ornament and preference
+  tend = 100 # number of time steps
+)
+
+# Plot it
+data %>%
+  pivot_longer(t:p) %>%
+  ggplot(aes(x = time, y = value, color = name)) +
+  geom_line() +
+  xlab("Time step") +
+  ylab("Trait value") +
+  labs(color = NULL)
+```
+
+This will produce a plot showing the evolution of the mean value of *t* and of *p* through time. How do *t* and *p* evolve? Does it confirm your expectations?
+
+**Hint:** in what follows you can change the simulation time `tend` as you see fit. Just beware that you may have to wait a bit if you set a very long simulation time.
+
+Now re-run the code, whilst varying the initial value of *p* (but keeping *t* constant) and varying the initial value of *t* (but keeping *p* constant). How does varying the initial value affect the evolutionary dynamics? What effect does the starting point of *p* have?
+
+In this exercise you can see that the initial value of a trait can affect its evolutionary dynamics. What implications does this have for the conclusions we can draw from models about the real world?
+
+## Question 2
+
+So far, we have assumed that the covariance `Gt` of *t* and *p* is zero --- we will investigate this assumption now. This parameter indicates how much *t* and *p* tend to be inherited together (they are the off-diagonal of the G-matrix, if you remember the lecture on quantitative genetics). What effect do you expect the covariance of *p* and *t* to have on the evolution of *p* and *t*?
+
+Now re-run the code from before, but using a range of different values for the covariance of *t* and *p*. What is the effect on the evolution of *p* and *t*? Do your findings match your expectations? And can you find an explanation for the pattern you observe? (HINT -- check the lecture on sexual selection, specifically consider which of the four discussed explanations for female choosiness may be at work).
+
+**Bonus:** Can you find a tipping point value of the covariance, at which a small change in the covariance leads to very different evolutionary outcomes? Can you find an explanation why the tipping point is at this covariance value?
+
+## Question 3
+
+Next, you will generate a so-called phase plot. This plot shows potential values of *t* on the x-axis and potential values of *p* on the y-axis. You can then see the evolutionary trajectory of a simulated population in this space, where each point represents a combination of *t* and *p* at a specific time point, and points get bigger as time progresses (that should allow you to tell apart the beginning and the end of the simulation). A thick black line will show you the equilibria of the model (the line of equilibria can be mathematically derived). Use the following code to plot the evolutionary trajectory from various starting points of *t* and *p*, whilst setting the covariance of *t* and *p* to zero. You can show multiple simulations in a phase plot (they should show in different colors)! Feel free to add more simulations with different starting points. Be creative, but be patient --- with more simulations the code will take longer to run. What do you observe in this plot? Convince yourself that the simulations shown in the phase plot are just another way to show the type of plot you generated in question 1.
+
+```{r, fig.show = "hide"}
+# Parameters that will remain constant between runs (you can change them)
+Gt <- 1
+Gtp <- 0
+tend <- 100
+
+# Run multiple simulations and assemble them in a table
+data <- tibble(data = list(
+  
+  # You can add or remove simulations here (don't forget the commas!)
+  sim_model_qgn(t0 = 0, p0 = 1, Gt = Gt, Gtp = Gtp, tend = tend),
+  sim_model_qgn(t0 = 6, p0 = 3, Gt = Gt, Gtp = Gtp, tend = tend),
+  sim_model_qgn(t0 = 6, p0 = 0, Gt = Gt, Gtp = Gtp, tend = tend),
+  sim_model_qgn(t0 = 0, p0 = 4, Gt = Gt, Gtp = Gtp, tend = tend)
+  
+))
+
+# Rearrange the table
+data <- data %>% mutate(i = seq(n())) %>% unnest(data)
+
+# Plot
+data %>%
+  ggplot(aes(x = t, y = p)) +
+  geom_line(data = tibble(
+    p = seq(min(data$p), max(data$p), length.out = 1000),
+    t = get_teq_qgn(p)
+  ), linewidth = 1) +
+  geom_line(aes(group = i)) + 
+  geom_point(aes(size = time, fill = factor(i)), shape = 21) +
+  theme(legend.position = "none")
+```
+
+Now, you will again vary the covariance `Gt`. Generate the phase plot for different values of the covariance of *p* and *t*. What do you observe? By systematically varying the value of the covariance, you can observe two fundamentally different dynamics. Describe these dynamics. Does evolution always lead towards an equilibrium? What could be driving these two different dynamics? Refer back to the lectures on sexual selection: what is happening in cases where evolution does not lead to an equilibrium? (Remember, you can play with the duration of the simulation `tend` if visibility is not great.)
+
+**Bonus:** Can you again find a tipping point value for the covariance? Is it the same value that you found before?
+
+# Part 2: Individual-based simulation
+
+## Question 4:
+
+Now, we will look at the second model: an individual-based simulation, simulating the evolution of *t* and *p* through time. Run this piece of code:
+
+```{r, fig.show = "hide", warning = FALSE, results = "hide"}
+# Load the functions we need
+source("functions/ind-based-functions.R")
+
+# Run the simulation
+data <- sim_model_ibm(
+  N = 1000, # population size
+  t0 = 0,
+  p0 = 1,
+  varcov = matrix(c(
+    1, 0,        # var(t)     cov(t, p)
+    0, 1.5       # cov(t, p)  var(p)
+  ), nrow = 2), # initial phenotypic variance-covariance matrix 
+  r = 0.5, # recombination rate
+  tend = 100 # simulation time
+)
+
+# Plot the data
+data %>%
+  pivot_longer(t:p) %>%
+  ggplot(aes(x = time, y = value, color = name)) +
+  geom_line() +
+  xlab("Time step") +
+  ylab("Trait value") +
+  labs(color = NULL)
+```
+
+The plot it generates shows the change of the average values of *p* and *t* in the simulated population, over time. How do *p* and *t* evolve? Are there differences to the patterns you saw in the previous model? Why/why not?
+
+Again, you should now vary the initial values of *t* and *p*. What effect does this have? Can you draw the same conclusions you drew from the first model?
+
+## Question 5
+
+As before, we will again vary the initial covariance of *p* and *t* (so the off-diagonal of the `varcov` argument). This matrix controls how the initial population is generated: the values of *p* and *t* across individuals are sampled from a bivariate normal distribution with that variance-covariance matrix. So if the covariance is high and positive, in the initial population individuals with high *p* will also tend to have high *t* (note that this applies only to the initial population, so the first time step). What patterns do you observe? 
+
+**Note:** some covariance values will result in an error. In this case, just try a different value.
+
+Now, change the value of the recombination rate `r`. What pattern do you observe? Does changing the recombination rate have a similar effect to changing the covariance? Why/why not? Which of the two parameters, `varcov` or `r`, do you think corresponds most to the covariance parameter `Gtp` of the quantitative genetics example?
+
+## Question 6
+
+As before, you will now inspect a phase plot, using the same parameters you used in part 1. Here is the code for it (this could take a little while to run):
+
+```{r, fig.show = "hide", results = "hide"}
+# Parameters that will remain constant between runs (you can change them)
+N <- 1000
+varcov <-  matrix(c(1, 0, 0, 1.5), nrow = 2)
+r <- 0.5
+tend <- 100
+
+# Run multiple simulations and assemble them in a table
+data <- tibble(data = list(
+  
+  # In this example all four simulations start with the same values,
+  # but they are expected to differ because they are stochastic.
+  # Feel free to change, add or remove some simulations.
+  
+  sim_model_ibm(N = N, t0 = 0, p0 = 1, varcov = varcov, r = r, tend = tend),
+  sim_model_ibm(N = N, t0 = 0, p0 = 1, varcov = varcov, r = r, tend = tend),
+  sim_model_ibm(N = N, t0 = 0, p0 = 1, varcov = varcov, r = r, tend = tend),
+  sim_model_ibm(N = N, t0 = 0, p0 = 1, varcov = varcov, r = r, tend = tend)
+  
+))
+
+# Rearrange the table
+data <- data %>% mutate(i = seq(n())) %>% unnest(data)
+
+# Plot
+data %>%
+  ggplot(aes(x = t, y = p)) +
+  geom_line(data = tibble(
+    p = seq(min(data$p), max(data$p), length.out = 1000),
+    t = get_teq_qgn(p)
+  ), linewidth = 1) +
+  geom_line(aes(group = i)) + 
+  geom_point(aes(size = time, fill = factor(i)), shape = 21) +
+  theme(legend.position = "none")
+```
+
+What do you observe? Note that the thick black line is the one expected under the quantitative genetics model we studied before. Which results hold for both models, which ones don't? Can you give an explanation for the differences that you find?
+
+# Part 3: Population genetics
+
+In this model, we will track the allele frequency of two mutant alleles, one called *t* conferring an ornament and one called *p* conferring a preference. Note that here, ornament and preference are now binary traits ("have it" or "doesn't have it").
+
+## Question 7
+
+Run this section of code:
+
+```{r, fig.show = "hide", warning = FALSE}
+# Load useful functions
+source("functions/pop-gen-functions.R")
+
+# Run a simulation
+data <- sim_model_pgn(
+  t0 = 0.01, # initial ornament frequency
+  p0 = 0.1, # initial preference frequency
+  D0 = 0, # initial linkage disequilibrium
+  r = 0.5, # recombination rate
+  tend = 100 # simulation time
+)
+
+# Plot it
+data %>%
+  pivot_longer(t:p) %>%
+  ggplot(aes(x = time, y = value, color = name)) +
+  geom_line() +
+  xlab("Time step") +
+  ylab("Frequency") +
+  labs(color = NULL) +
+  ylim(c(0, 1))
+
+```
+
+The plot it generates shows the change in allele frequency through time, for *t* and for *p*. How do *t* and *p* change through time? Compare this to question 1, from the section on Quantitative Genetics. What is similar, what isn’t? What different information do the two models provide?
+
+Now change the initial frequency of *p* and *t*, with the initial value of *D* (the linkage disequilibrium) kept at zero. How does this affect the outcome of the simulation? 
+
+Compare the plots generated by the population genetics model with initial *D* set to zero, and the plots generated by the quantitative genetics module with covariance set to zero. Do you see the same pattern? What is similar, what isn’t? 
+**Bonus:** focusing on the evolution of *p*, can you find an explanation for the differences between the predictions of both models? 
+
+## Question 8
+
+So far, we assumed that the initial linkage disequilibrium is zero. Now, let us vary this! In your own words, what does linkage disequilibrium mean? What effect do you expect from varying its initial value? 
+
+Now try different values for the initial linkage disequilibrium (in the range of -1 to 1). Do the results match your expectations? Can you give an explanation for the patterns that you see?
+
+Now vary the value of the recombination rate `r`. How does this affect the outcome of the simulation? Compare the results of changing the initial value of *D*, changing the recombination rate, and changing the covariance (in the quantitative genetics exercise). Are the results similar? Why/why not? How do those two variables relate to each other?
+
+## Question 9
+
+Now, generate phase plots for different values of the initial linkage disequilibrium, using this code: 
+
+```{r, fig.show = "hide", warning = FALSE}
+# Parameters that will remain constant between runs (you can change them)
+r <- 0.5
+tend <- 100
+
+# Run multiple simulations and assemble them in a table
+data <- tibble(data = list(
+  
+  # You can add or remove simulations here (don't forget the commas!)
+  sim_model_pgn(t0 = 0.01, p0 = 0.1, D0 = 0, r = r, tend = tend),
+  sim_model_pgn(t0 = 0.1, p0 = 0.5, D0 = 0.2, r = r, tend = tend),
+  sim_model_pgn(t0 = 0.3, p0 = 0.7, D0 = 0.6, r = r, tend = tend)
+  
+))
+
+# Rearrange the table
+data <- data %>% mutate(i = seq(n())) %>% unnest(data)
+
+# Plot
+data %>%
+  ggplot(aes(x = t, y = p)) +
+  geom_line(data = tibble(
+    p = seq(0, 1, length.out = 1000),
+    t = get_teq_pgn(p)
+  ), linewidth = 1) +
+  geom_line(aes(group = i)) + 
+  geom_point(aes(size = time, fill = factor(i)), shape = 21) +
+  theme(legend.position = "none") +
+  xlim(c(0, 1)) +
+  ylim(c(0, 1))
+
+```
+
+(Here the thick black line is a line of equilibria mathematically derived for that specific population genetic model.) What do you observe? 
+
+**Bonus:** Does one morph always spread to fixation? How do the quantitative genetics model and the population genetics model differ in how they model variation in the population? Hint: look at the region of the plot where *p* is near 0.25, and consider what you have learnt about quantitative genetic models in the lecture.
+
+# Part 4: Synthesis
+
+## Question 10
+
+You have now used three very different theoretical approaches to investigate the same scenario of sexual selection. In your opinion, which pros/cons do each of the models have? 
