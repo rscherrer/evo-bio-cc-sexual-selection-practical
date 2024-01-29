@@ -8,6 +8,10 @@ Practical on Sexual Selection for the EvoBio Crash Course.
 * Share the zipped repo with the students as well as the explanations below.
 * Tell the students to check out the video explanation for the [Quantitative Genetics practical](https://github.com/rscherrer/evo-bio-cc-quantitative-genetics-practical).
 
+## Note
+
+In this practical the answers are in the form of numbered R scripts.
+
 ## For students
 
 * Download the zipped folder sexual-selection-practical.zip.
